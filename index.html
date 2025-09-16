@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Magic Time</title>
+
+  <!-- PWA для iPhone -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Magic Time">
+
+  <!-- Подключение шрифта -->
+  <style>
+    @font-face {
+      font-family: "SFProDisplay";
+      src: url("SF-Pro-Display-Semibold.woff") format("woff");
+      font-weight: 600;
+      font-style: normal;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: black;
+      overflow: hidden;
+      font-family: "SFProDisplay", -apple-system, BlinkMacSystemFont, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    #background {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: url("scrin.png") no-repeat center center;
+      background-size: cover;
+      z-index: 0;
+    }
+
+    /* Дата */
+    #date {
+      position: absolute;
+      top: 2%; /* подняли почти к самому верху */
+      width: 100%;
+      text-align: center;
+      font-size: 24px;
+      font-weight: 600;
+      color: white;
+      z-index: 1;
+    }
+
+    /* Время */
+    #time {
+      position: absolute;
+      top: calc(2% + 40px); /* фиксированное расстояние */
+      width: 100%;
+      text-align: center;
+      font-size: 106px; /* увеличено на 10% */
+      font-weight: 600;
+      color: white;
+      z-index: 1;
+    }
+
+    /* Сетка */
+    #grid {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      z-index: 2;
+    }
+    .zone {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div id="background"></div>
+  <div id="date">Понедельник, 15 сентября</div>
+  <div id="time">22:49</div>
+
+  <div id="grid">
+    <div class="zone" data-num="1"></div>
+    <div class="zone" data-num="2"></div>
+    <div class="zone" data-num="3"></div>
+    <div class="zone" data-num="4"></div>
+    <div class="zone" data-num="5"></div>
+    <div class="zone" data-num="6"></div>
+    <div class="zone" data-num="7"></div>
+    <div class="zone" data-num="8"></div>
+    <div class="zone" data-num="9"></div>
+  </div>
+
+  <script>
+    let offset = 0;
+    let countdownActive = false;
+    let lastNumber = null;
+    let firstPressDone = false;
+
+    const days = ["Воскресенье","Понедельник","Вторник","Среда","Четверг","Пятница","Суббота"];
+    const months = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+
+    function formatTime(d) {
+      let h = d.getHours().toString().padStart(2,"0");
+      let m = d.getMinutes().toString().padStart(2,"0");
+      return `${h}:${m}`;
+    }
+
+    function formatDate(d) {
+      let day = days[d.getDay()];
+      let date = d.getDate();
+      let month = months[d.getMonth()];
+      return `${day}, ${date} ${month}`;
+    }
+
+    function updateDisplay() {
+      let now = new Date();
+      let displayTime = new Date(now.getTime() + offset * 60000);
+      document.getElementById("time").innerText = formatTime(displayTime);
+      document.getElementById("date").innerText = formatDate(displayTime);
+    }
+
+    setInterval(updateDisplay, 1000);
+    updateDisplay();
+
+    document.querySelectorAll(".zone").forEach(zone => {
+      zone.addEventListener("click", () => {
+        let n = parseInt(zone.dataset.num);
+
+        if (!firstPressDone) {
+          offset = n;
+          lastNumber = n;
+          firstPressDone = true;
+          updateDisplay();
+        } else if (firstPressDone && lastNumber === n && !countdownActive) {
+          // задержка 5 секунд перед стартом обратного отсчёта
+          setTimeout(() => {
+            startCountdown();
+          }, 5000);
+        } else {
+          offset = n;
+          lastNumber = n;
+          firstPressDone = true;
+          updateDisplay();
+        }
+      });
+    });
+
+    async function startCountdown() {
+      if (countdownActive || offset <= 0) return;
+      countdownActive = true;
+      while (offset > 0) {
+        offset--;
+        updateDisplay();
+        await new Promise(r => setTimeout(r, 1000));
+      }
+      countdownActive = false;
+      firstPressDone = false;
+      lastNumber = null;
+    }
+  </script>
+</body>
+</html>
